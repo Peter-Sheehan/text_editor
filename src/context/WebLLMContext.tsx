@@ -49,7 +49,9 @@ export function WebLLMProvider({ children }: { children: ReactNode }) {
     let cancelled = false
 
     async function initEngine() {
+      console.log('Checking WebGPU support...')
       const supported = await checkWebGPUSupport()
+      console.log('WebGPU supported:', supported)
 
       if (!supported) {
         setIsSupported(false)
@@ -59,11 +61,13 @@ export function WebLLMProvider({ children }: { children: ReactNode }) {
       }
 
       try {
+        console.log('Loading AI model:', MODEL_ID)
         setLoadingStatus('Loading AI model...')
 
         const engine = await CreateMLCEngine(MODEL_ID, {
           initProgressCallback: (progress) => {
             if (cancelled) return
+            console.log('Loading progress:', progress.progress, progress.text)
             setLoadingProgress(progress.progress * 100)
             setLoadingStatus(progress.text)
           },

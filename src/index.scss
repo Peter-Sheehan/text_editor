@@ -1,4 +1,8 @@
-@use '@carbon/react';
+@use '@carbon/react' with (
+  $font-path: '@ibm/plex'
+);
+
+@import '@ibm/plex/css/ibm-plex.css';
 
 @import "./styles/ghost-text.css";
 
