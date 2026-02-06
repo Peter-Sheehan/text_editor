@@ -1,0 +1,14 @@
+/* Ghost text styling for predictive text */
+.ghost-text {
+  color: #9ca3af;
+  opacity: 0.7;
+  pointer-events: none;
+  user-select: none;
+  font-style: normal;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ghost-text {
+    color: #6b7280;
+  }
+}

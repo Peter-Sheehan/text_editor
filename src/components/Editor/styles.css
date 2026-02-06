@@ -1,0 +1,13 @@
+.editor-wrapper {
+  width: 100%;
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.editor-container {
+  border: 1px solid #393939;
+  padding: 1rem;
+  min-height: 400px;
+  background-color: #262626;
+}
