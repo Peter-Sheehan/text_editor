@@ -5,9 +5,52 @@
   padding: 1rem;
 }
 
+.editor-toolbar {
+  margin-bottom: 1rem;
+}
+
 .editor-container {
   border: 1px solid #393939;
   padding: 1rem;
   min-height: 400px;
   background-color: #262626;
+}
+
+.code-view {
+  margin: 0;
+  padding: 0;
+  background: none;
+  color: #f4f4f4;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-x: auto;
+}
+
+.code-view code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.code-editor {
+  width: 100%;
+  min-height: 368px;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  color: #f4f4f4;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+}
+
+.code-editor:focus {
+  outline: none;
 }
