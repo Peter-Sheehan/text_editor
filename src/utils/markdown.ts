@@ -1,4 +1,44 @@
 import type { JSONContent } from '@tiptap/core'
+import MarkdownIt from 'markdown-it'
+import DOMPurify from 'dompurify'
+import hljs from 'highlight.js/lib/core'
+import javascript from 'highlight.js/lib/languages/javascript'
+import typescript from 'highlight.js/lib/languages/typescript'
+import python from 'highlight.js/lib/languages/python'
+import xml from 'highlight.js/lib/languages/xml' // HTML/XML
+import css from 'highlight.js/lib/languages/css'
+import json from 'highlight.js/lib/languages/json'
+import bash from 'highlight.js/lib/languages/bash'
+import markdown from 'highlight.js/lib/languages/markdown'
+
+// Register languages for syntax highlighting
+hljs.registerLanguage('javascript', javascript)
+hljs.registerLanguage('typescript', typescript)
+hljs.registerLanguage('python', python)
+hljs.registerLanguage('html', xml)
+hljs.registerLanguage('xml', xml)
+hljs.registerLanguage('css', css)
+hljs.registerLanguage('json', json)
+hljs.registerLanguage('bash', bash)
+hljs.registerLanguage('shell', bash)
+hljs.registerLanguage('markdown', markdown)
+
+// Configure markdown-it with syntax highlighting
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true,
+  highlight: function (str, lang) {
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return hljs.highlight(str, { language: lang }).value
+      } catch (__) {
+        // Ignore errors
+      }
+    }
+    return '' // Use external default escaping
+  }
+})
 
 export function generateMarkdown(json: JSONContent): string {
   if (!json.content) return ''
@@ -41,9 +81,37 @@ function nodeToMarkdown(node: JSONContent): string {
     case 'horizontalRule':
       return '---\n'
 
+    case 'table':
+      return tableToMarkdown(node) + '\n'
+
     default:
       return contentToMarkdown(node.content)
   }
+}
+
+function tableToMarkdown(table: JSONContent): string {
+  if (!table.content || table.content.length === 0) return ''
+
+  const rows = table.content
+  let markdown = ''
+
+  // Process each row
+  rows.forEach((row, rowIndex) => {
+    if (!row.content) return
+
+    const cells = row.content.map(cell => {
+      return contentToMarkdown(cell.content).trim()
+    })
+
+    markdown += '| ' + cells.join(' | ') + ' |\n'
+
+    // Add separator after first row (header row)
+    if (rowIndex === 0) {
+      markdown += '| ' + cells.map(() => '---').join(' | ') + ' |\n'
+    }
+  })
+
+  return markdown
 }
 
 function contentToMarkdown(content?: JSONContent[]): string {
@@ -87,129 +155,17 @@ function contentToMarkdown(content?: JSONContent[]): string {
 }
 
 export function parseMarkdown(markdown: string): string {
-  const lines = markdown.split('\n')
-  let html = ''
-  let inCodeBlock = false
-  let codeContent = ''
-  let inList = false
-  let listType = ''
-  let listItems: string[] = []
-
-  const flushList = () => {
-    if (inList && listItems.length > 0) {
-      const tag = listType === 'ul' ? 'ul' : 'ol'
-      html += `<${tag}>${listItems.map(item => `<li><p>${item}</p></li>`).join('')}</${tag}>`
-      listItems = []
-      inList = false
-    }
-  }
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-
-    // Code block
-    if (line.startsWith('```')) {
-      if (inCodeBlock) {
-        html += `<pre><code>${escapeHtml(codeContent.trim())}</code></pre>`
-        codeContent = ''
-        inCodeBlock = false
-      } else {
-        flushList()
-        inCodeBlock = true
-      }
-      continue
-    }
-
-    if (inCodeBlock) {
-      codeContent += line + '\n'
-      continue
-    }
-
-    // Horizontal rule
-    if (line.match(/^---+$/)) {
-      flushList()
-      html += '<hr>'
-      continue
-    }
-
-    // Headings
-    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/)
-    if (headingMatch) {
-      flushList()
-      const level = headingMatch[1].length
-      const text = parseInlineMarkdown(headingMatch[2])
-      html += `<h${level}>${text}</h${level}>`
-      continue
-    }
-
-    // Unordered list
-    const ulMatch = line.match(/^[-*]\s+(.+)$/)
-    if (ulMatch) {
-      if (!inList || listType !== 'ul') {
-        flushList()
-        inList = true
-        listType = 'ul'
-      }
-      listItems.push(parseInlineMarkdown(ulMatch[1]))
-      continue
-    }
-
-    // Ordered list
-    const olMatch = line.match(/^\d+\.\s+(.+)$/)
-    if (olMatch) {
-      if (!inList || listType !== 'ol') {
-        flushList()
-        inList = true
-        listType = 'ol'
-      }
-      listItems.push(parseInlineMarkdown(olMatch[1]))
-      continue
-    }
-
-    // Blockquote
-    const quoteMatch = line.match(/^>\s*(.*)$/)
-    if (quoteMatch) {
-      flushList()
-      html += `<blockquote><p>${parseInlineMarkdown(quoteMatch[1])}</p></blockquote>`
-      continue
-    }
-
-    // Empty line
-    if (line.trim() === '') {
-      flushList()
-      continue
-    }
-
-    // Paragraph
-    flushList()
-    html += `<p>${parseInlineMarkdown(line)}</p>`
-  }
-
-  flushList()
-
-  return html
-}
-
-function parseInlineMarkdown(text: string): string {
-  // Bold
-  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-  // Italic
-  text = text.replace(/\*(.+?)\*/g, '<em>$1</em>')
-  // Strikethrough
-  text = text.replace(/~~(.+?)~~/g, '<s>$1</s>')
-  // Inline code
-  text = text.replace(/`(.+?)`/g, '<code>$1</code>')
-  // Links
-  text = text.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
-
-  return text
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
+  const unsafeHtml = md.render(markdown)
+  return DOMPurify.sanitize(unsafeHtml, {
+    ALLOWED_TAGS: [
+      'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'ul', 'ol', 'li',
+      'blockquote', 'pre', 'code',
+      'strong', 'em', 'del', 'a',
+      'hr', 'br',
+      'table', 'thead', 'tbody', 'tr', 'th', 'td',
+      'span', 'div'
+    ],
+    ALLOWED_ATTR: ['href', 'class', 'language'],
+  })
 }

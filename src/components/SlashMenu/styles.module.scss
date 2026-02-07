@@ -1,0 +1,74 @@
+@use '@carbon/styles/scss/theme' as theme;
+@use '@carbon/styles/scss/spacing' as spacing;
+
+.slashMenu {
+  background-color: theme.$layer-01;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid theme.$border-subtle-01;
+  overflow: hidden;
+  min-width: 220px;
+}
+
+.slashMenuEmpty {
+  padding: spacing.$spacing-05;
+  font-size: 0.875rem;
+  color: theme.$text-secondary;
+}
+
+.slashMenuItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: spacing.$spacing-04;
+  padding: spacing.$spacing-04 spacing.$spacing-05;
+  text-align: left;
+  transition: background-color 0.1s ease;
+  color: theme.$text-primary;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+
+  &:hover {
+    background-color: theme.$layer-02;
+  }
+
+  &--selected {
+    background-color: theme.$layer-accent-01;
+
+    &:hover {
+      background-color: theme.$layer-accent-01;
+    }
+  }
+}
+
+.slashMenuIcon {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: theme.$layer-02;
+  font-size: 0.875rem;
+  font-family: 'IBM Plex Mono', monospace;
+  flex-shrink: 0;
+}
+
+.slashMenuContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.slashMenuTitle {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: theme.$text-primary;
+}
+
+.slashMenuDescription {
+  font-size: 0.75rem;
+  color: theme.$text-secondary;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,0 +1,84 @@
+@use '@carbon/styles/scss/theme' as theme;
+@use '@carbon/styles/scss/spacing' as spacing;
+
+.editorWrapper {
+  width: 100%;
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: spacing.$spacing-05;
+}
+
+.editorToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: spacing.$spacing-05;
+  padding: spacing.$spacing-03;
+  border-bottom: 1px solid theme.$border-subtle-01;
+  gap: spacing.$spacing-05;
+  flex-wrap: wrap;
+}
+
+.toolbarLeft {
+  display: flex;
+  gap: spacing.$spacing-03;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.toolbarSection {
+  display: flex;
+  gap: spacing.$spacing-02;
+  padding: 0 spacing.$spacing-03;
+  border-right: 1px solid theme.$border-subtle-02;
+
+  &:last-child {
+    border-right: none;
+  }
+}
+
+.toolbarRight {
+  display: flex;
+  gap: spacing.$spacing-02;
+}
+
+.editorContainer {
+  border: 1px solid theme.$border-subtle-01;
+  padding: spacing.$spacing-05;
+  min-height: 400px;
+  background-color: theme.$layer-01;
+}
+
+.codeView {
+  margin: 0;
+  padding: 0;
+  background: none;
+  color: theme.$text-primary;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-x: auto;
+
+  code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+}
+
+.codeEditor {
+  width: 100%;
+  min-height: 368px;
+  background: none !important;
+  outline: none !important;
+
+  textarea {
+    outline: none !important;
+  }
+
+  pre {
+    outline: none !important;
+  }
+}

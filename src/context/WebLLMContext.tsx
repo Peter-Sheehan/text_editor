@@ -1,6 +1,9 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
-import { CreateMLCEngine, type MLCEngine, type ChatCompletionMessageParam } from '@mlc-ai/web-llm'
+import { createContext, useContext, useState, useEffect, useRef, useCallback, type ReactNode } from 'react'
 import { Modal, ProgressBar } from '@carbon/react'
+import { CreateMLCEngine, type MLCEngine } from '@mlc-ai/web-llm'
+
+// const MODEL_ID = import.meta.env.VITE_MODEL_ID || 'Llama-3.2-1B-Instruct-q4f32_1-MLC'
+const MODEL_ID = ''
 
 interface WebLLMContextType {
   isLoading: boolean
@@ -10,35 +13,15 @@ interface WebLLMContextType {
   isReady: boolean
   isSupported: boolean
   generateCompletion: (context: string) => Promise<string>
-  generateText: (options: GenerateTextOptions) => Promise<string>
-}
-
-interface GenerateTextOptions {
-  prompt: string
-  context?: string
-  systemPrompt?: string
+  generateText: (options: { prompt: string; context?: string; systemPrompt?: string }) => Promise<string>
 }
 
 const WebLLMContext = createContext<WebLLMContextType | null>(null)
 
-const MODEL_ID = 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'
-
-async function checkWebGPUSupport(): Promise<boolean> {
-  if (!navigator.gpu) {
-    return false
-  }
-  try {
-    const adapter = await navigator.gpu.requestAdapter()
-    return adapter !== null
-  } catch {
-    return false
-  }
-}
-
 export function WebLLMProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [loadingProgress, setLoadingProgress] = useState(0)
-  const [loadingStatus, setLoadingStatus] = useState('Checking WebGPU support...')
+  const [loadingStatus, setLoadingStatus] = useState('Initializing...')
   const [error, setError] = useState<string | null>(null)
   const [isReady, setIsReady] = useState(false)
   const [isSupported, setIsSupported] = useState(true)
@@ -48,12 +31,9 @@ export function WebLLMProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false
 
-    async function initEngine() {
-      console.log('Checking WebGPU support...')
-      const supported = await checkWebGPUSupport()
-      console.log('WebGPU supported:', supported)
-
-      if (!supported) {
+    async function init() {
+      // Check WebGPU support
+      if (!navigator.gpu) {
         setIsSupported(false)
         setIsLoading(false)
         setError('WebGPU is not supported in your browser. AI features are disabled. Try using Chrome 113+ or Edge 113+.')
@@ -61,100 +41,102 @@ export function WebLLMProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        console.log('Loading AI model:', MODEL_ID)
-        setLoadingStatus('Loading AI model...')
+        const adapter = await navigator.gpu.requestAdapter()
+        if (cancelled) return
+        if (!adapter) {
+          setIsSupported(false)
+          setIsLoading(false)
+          setError('WebGPU adapter not available. AI features are disabled.')
+          return
+        }
+      } catch {
+        if (cancelled) return
+        setIsSupported(false)
+        setIsLoading(false)
+        setError('WebGPU check failed. AI features are disabled.')
+        return
+      }
 
+      // Load model
+      try {
         const engine = await CreateMLCEngine(MODEL_ID, {
           initProgressCallback: (progress) => {
             if (cancelled) return
-            console.log('Loading progress:', progress.progress, progress.text)
             setLoadingProgress(progress.progress * 100)
             setLoadingStatus(progress.text)
           },
         })
 
         if (cancelled) return
-
         engineRef.current = engine
         setIsReady(true)
         setIsLoading(false)
-        setLoadingStatus('Ready')
       } catch (err) {
         if (cancelled) return
-        console.error('WebLLM initialization error:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load model')
+        setError((err as Error).message)
         setIsLoading(false)
       }
     }
 
-    initEngine()
-
+    init()
     return () => {
       cancelled = true
     }
   }, [])
 
   const generateCompletion = useCallback(async (context: string): Promise<string> => {
-    if (!engineRef.current) {
-      throw new Error('Model not loaded')
-    }
-
-    const messages: ChatCompletionMessageParam[] = [
-      {
-        role: 'system',
-        content: 'You are an AI writing assistant. Complete the text naturally. Only output the completion, nothing else. Keep it brief (1-2 sentences max).',
-      },
-      {
-        role: 'user',
-        content: `Continue this text naturally:\n\n${context}`,
-      },
-    ]
+    if (!engineRef.current) throw new Error('Model not loaded')
 
     const response = await engineRef.current.chat.completions.create({
-      messages,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are an AI writing assistant. Complete the text naturally. Only output the completion, nothing else. Keep it brief (1-2 sentences max).',
+        },
+        {
+          role: 'user',
+          content: `Continue this text naturally:\n\n${context}`,
+        },
+      ],
       max_tokens: 50,
       temperature: 0.7,
       stop: ['\n\n', '.', '!', '?'],
     })
 
-    const completion = response.choices[0]?.message?.content || ''
-    return completion.trim()
+    return response.choices[0]?.message?.content?.trim() || ''
   }, [])
 
-  const generateText = useCallback(async (options: GenerateTextOptions): Promise<string> => {
-    if (!engineRef.current) {
-      throw new Error('Model not loaded')
-    }
+  const generateText = useCallback(
+    async (options: { prompt: string; context?: string; systemPrompt?: string }): Promise<string> => {
+      if (!engineRef.current) throw new Error('Model not loaded')
 
-    const { prompt, context, systemPrompt } = options
+      const { prompt, context, systemPrompt = 'You are a helpful writing assistant. Respond concisely and helpfully.' } =
+        options
 
-    const messages: ChatCompletionMessageParam[] = [
-      {
-        role: 'system',
-        content: systemPrompt || 'You are a helpful writing assistant. Respond concisely and helpfully.',
-      },
-    ]
+      const messages: Array<{ role: 'system' | 'user'; content: string }> = [
+        { role: 'system', content: systemPrompt },
+      ]
 
-    if (context) {
-      messages.push({
-        role: 'user',
-        content: `Context from document:\n${context}\n\nUser request: ${prompt}`,
+      if (context) {
+        messages.push({
+          role: 'user',
+          content: `Context from document:\n${context}\n\nUser request: ${prompt}`,
+        })
+      } else {
+        messages.push({ role: 'user', content: prompt })
+      }
+
+      const response = await engineRef.current.chat.completions.create({
+        messages,
+        max_tokens: 500,
+        temperature: 0.7,
       })
-    } else {
-      messages.push({
-        role: 'user',
-        content: prompt,
-      })
-    }
 
-    const response = await engineRef.current.chat.completions.create({
-      messages,
-      max_tokens: 500,
-      temperature: 0.7,
-    })
-
-    return response.choices[0]?.message?.content || ''
-  }, [])
+      return response.choices[0]?.message?.content || ''
+    },
+    []
+  )
 
   const showLoadingModal = isLoading || (error !== null && !dismissed)
 
@@ -182,16 +164,7 @@ export function WebLLMProvider({ children }: { children: ReactNode }) {
         preventCloseOnClickOutside
       >
         <div className="loading-content">
-          {!error && (
-            <>
-              <ProgressBar
-                label={loadingStatus}
-                value={loadingProgress}
-                max={100}
-                size="big"
-              />
-            </>
-          )}
+          {!error && <ProgressBar label={loadingStatus} value={loadingProgress} max={100} size="big" />}
 
           {error && (
             <>

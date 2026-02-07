@@ -3,7 +3,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import tippy, { type Instance as TippyInstance } from 'tippy.js'
 import type { SuggestionProps, SuggestionKeyDownProps } from '@tiptap/suggestion'
 import { slashCommands, type SlashCommandItem } from '@/extensions/SlashCommand/suggestion'
-import './styles.css'
+import styles from './styles.module.scss'
 
 interface SlashMenuProps {
   items: SlashCommandItem[]
@@ -52,26 +52,26 @@ const SlashMenuComponent = forwardRef<SlashMenuRef, SlashMenuProps>(
 
     if (items.length === 0) {
       return (
-        <div className="slash-menu slash-menu--empty">
+        <div className={`${styles.slashMenu} ${styles.slashMenuEmpty}`}>
           No commands found
         </div>
       )
     }
 
     return (
-      <div className="slash-menu">
+      <div className={styles.slashMenu}>
         {items.map((item, index) => (
           <button
             key={item.title}
             onClick={() => selectItem(index)}
-            className={`slash-menu__item ${
-              index === selectedIndex ? 'slash-menu__item--selected' : ''
+            className={`${styles.slashMenuItem} ${
+              index === selectedIndex ? styles['slashMenuItem--selected'] : ''
             }`}
           >
-            <span className="slash-menu__icon">{item.icon}</span>
-            <div className="slash-menu__content">
-              <div className="slash-menu__title">{item.title}</div>
-              <div className="slash-menu__description">{item.description}</div>
+            <span className={styles.slashMenuIcon}>{item.icon}</span>
+            <div className={styles.slashMenuContent}>
+              <div className={styles.slashMenuTitle}>{item.title}</div>
+              <div className={styles.slashMenuDescription}>{item.description}</div>
             </div>
           </button>
         ))}
