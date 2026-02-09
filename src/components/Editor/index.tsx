@@ -126,6 +126,8 @@ export function Editor() {
         {viewMode === 'editor' && <EditorContent editor={editor} />}
 
         {viewMode === 'html' && (
+          // NOTE:implement this html and markdown in tiptap editor itself as separate extensions.
+          // so we can reuse the same editor instance and avoid syncing content between different editors
           <SimpleCodeEditor
             value={htmlContent}
             onValueChange={setHtmlContent}
@@ -142,6 +144,8 @@ export function Editor() {
         )}
 
         {viewMode === 'markdown' && (
+          // NOTE:implement this html and markdown in tiptap editor itself as separate extensions.
+          // so we can reuse the same editor instance and avoid syncing content between different editors
           <SimpleCodeEditor
             value={markdownContent}
             onValueChange={setMarkdownContent}
