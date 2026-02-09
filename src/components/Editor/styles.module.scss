@@ -43,6 +43,7 @@
 }
 
 .editorContainer {
+  position: relative;
   border: 1px solid theme.$border-subtle-01;
   padding: spacing.$spacing-05;
   min-height: 400px;

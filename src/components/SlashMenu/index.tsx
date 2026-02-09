@@ -1,61 +1,73 @@
-import { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
-import tippy, { type Instance as TippyInstance } from 'tippy.js'
-import type { SuggestionProps, SuggestionKeyDownProps } from '@tiptap/suggestion'
-import { slashCommands, type SlashCommandItem } from '@/extensions/SlashCommand/suggestion'
-import styles from './styles.module.scss'
+import {
+  useState,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
+import { createRoot, type Root } from "react-dom/client";
+import tippy, { type Instance as TippyInstance } from "tippy.js";
+import type {
+  SuggestionProps,
+  SuggestionKeyDownProps,
+} from "@tiptap/suggestion";
+import {
+  slashCommands,
+  type SlashCommandItem,
+} from "@/extensions/SlashCommand/suggestion";
+import styles from "./styles.module.scss";
 
 interface SlashMenuProps {
-  items: SlashCommandItem[]
-  command: (item: SlashCommandItem) => void
+  items: SlashCommandItem[];
+  command: (item: SlashCommandItem) => void;
 }
 
 export interface SlashMenuRef {
-  onKeyDown: (props: SuggestionKeyDownProps) => boolean
+  onKeyDown: (props: SuggestionKeyDownProps) => boolean;
 }
 
 const SlashMenuComponent = forwardRef<SlashMenuRef, SlashMenuProps>(
   ({ items, command }, ref) => {
-    const [selectedIndex, setSelectedIndex] = useState(0)
+    const [selectedIndex, setSelectedIndex] = useState(0);
 
     useEffect(() => {
-      setSelectedIndex(0)
-    }, [items])
+      setSelectedIndex(0);
+    }, [items]);
 
     const selectItem = useCallback(
       (index: number) => {
-        const item = items[index]
+        const item = items[index];
         if (item) {
-          command(item)
+          command(item);
         }
       },
-      [items, command]
-    )
+      [items, command],
+    );
 
     useImperativeHandle(ref, () => ({
       onKeyDown: ({ event }) => {
-        if (event.key === 'ArrowUp') {
-          setSelectedIndex((prev) => (prev - 1 + items.length) % items.length)
-          return true
+        if (event.key === "ArrowUp") {
+          setSelectedIndex((prev) => (prev - 1 + items.length) % items.length);
+          return true;
         }
-        if (event.key === 'ArrowDown') {
-          setSelectedIndex((prev) => (prev + 1) % items.length)
-          return true
+        if (event.key === "ArrowDown") {
+          setSelectedIndex((prev) => (prev + 1) % items.length);
+          return true;
         }
-        if (event.key === 'Enter') {
-          selectItem(selectedIndex)
-          return true
+        if (event.key === "Enter") {
+          selectItem(selectedIndex);
+          return true;
         }
-        return false
+        return false;
       },
-    }))
+    }));
 
     if (items.length === 0) {
       return (
         <div className={`${styles.slashMenu} ${styles.slashMenuEmpty}`}>
           No commands found
         </div>
-      )
+      );
     }
 
     return (
@@ -65,52 +77,60 @@ const SlashMenuComponent = forwardRef<SlashMenuRef, SlashMenuProps>(
             key={item.title}
             onClick={() => selectItem(index)}
             className={`${styles.slashMenuItem} ${
-              index === selectedIndex ? styles['slashMenuItem--selected'] : ''
+              index === selectedIndex ? styles["slashMenuItem--selected"] : ""
             }`}
           >
             <span className={styles.slashMenuIcon}>{item.icon}</span>
             <div className={styles.slashMenuContent}>
               <div className={styles.slashMenuTitle}>{item.title}</div>
-              <div className={styles.slashMenuDescription}>{item.description}</div>
+              <div className={styles.slashMenuDescription}>
+                {item.description}
+              </div>
             </div>
           </button>
         ))}
       </div>
-    )
-  }
-)
+    );
+  },
+);
 
-SlashMenuComponent.displayName = 'SlashMenuComponent'
+SlashMenuComponent.displayName = "SlashMenuComponent";
 
+/*  A class that:
+- Creates a React root and mounts the component into a DOM container
+- Uses Tippy.js to position the menu near the cursor
+- Bridges between ProseMirror's imperative plugin API and React's declarative components
+*/
 export class SlashMenu {
-  private props: SuggestionProps<SlashCommandItem>
-  private root: Root
-  private ref: SlashMenuRef | null = null
-  private popup: TippyInstance | null = null
+  private props: SuggestionProps<SlashCommandItem>;
+  private root: Root;
+  private ref: SlashMenuRef | null = null;
+  private popup: TippyInstance | null = null;
 
   constructor(
     container: HTMLElement,
-    props: SuggestionProps<SlashCommandItem>
+    props: SuggestionProps<SlashCommandItem>,
   ) {
-    this.props = props
-    this.root = createRoot(container)
-    this.render()
-    this.createPopup(container)
+    this.props = props;
+    this.root = createRoot(container);
+    this.render();
+    this.createPopup(container);
   }
 
   private render() {
-    const items = this.props.items.length > 0 ? this.props.items : slashCommands
+    const items =
+      this.props.items.length > 0 ? this.props.items : slashCommands;
     this.root.render(
       <SlashMenuComponent
         ref={(r) => {
-          this.ref = r
+          this.ref = r;
         }}
         items={items}
         command={(item) => {
-          item.command(this.props.editor, this.props.range)
+          item.command(this.props.editor, this.props.range);
         }}
-      />
-    )
+      />,
+    );
   }
 
   private createPopup(container: HTMLElement) {
@@ -121,37 +141,37 @@ export class SlashMenu {
         content: container,
         showOnCreate: true,
         interactive: true,
-        trigger: 'manual',
-        placement: 'bottom-start',
-        animation: 'shift-away',
+        trigger: "manual",
+        placement: "bottom-start",
+        animation: "shift-away",
         offset: [0, 8],
-      })
+      });
     }
   }
 
   updateProps(props: SuggestionProps<SlashCommandItem>) {
-    this.props = props
-    this.render()
+    this.props = props;
+    this.render();
     if (this.popup && props.clientRect) {
       this.popup.setProps({
         getReferenceClientRect: props.clientRect as () => DOMRect,
-      })
+      });
     }
   }
 
   onKeyDown(props: SuggestionKeyDownProps): boolean {
-    return this.ref?.onKeyDown(props) ?? false
+    return this.ref?.onKeyDown(props) ?? false;
   }
 
   destroy() {
-    this.popup?.destroy()
-    this.root.unmount()
+    this.popup?.destroy();
+    this.root.unmount();
   }
 }
 
 export function renderSlashMenu(
   container: HTMLElement,
-  props: SuggestionProps<SlashCommandItem>
+  props: SuggestionProps<SlashCommandItem>,
 ): SlashMenu {
-  return new SlashMenu(container, props)
+  return new SlashMenu(container, props);
 }

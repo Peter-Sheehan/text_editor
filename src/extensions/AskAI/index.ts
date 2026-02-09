@@ -34,7 +34,7 @@ export const AskAIExtension = Extension.create<AskAIOptions>({
 
   addKeyboardShortcuts() {
     return {
-      'Mod-j': () => {
+      'Mod-k': () => {
         this.options.onActivate()
         return true
       },

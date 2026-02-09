@@ -9,7 +9,7 @@ import { SlashCommand } from '@/extensions/SlashCommand'
 import { AskAIExtension } from '@/extensions/AskAI'
 import { PredictiveText, setPredictiveTextContext } from '@/extensions/PredictiveText'
 import { SlashMenu } from '@/components/SlashMenu'
-import { AskAI } from '@/components/AskAI'
+import { AskAIPopover } from '@/components/AskAI/AskAIPopover'
 import { EditorToolbar } from './EditorToolbar'
 import { ViewModeSwitcher } from './ViewModeSwitcher'
 import { useWebLLM } from '@/context/WebLLMContext'
@@ -88,13 +88,6 @@ export function Editor() {
   const { viewMode, htmlContent, markdownContent, setHtmlContent, setMarkdownContent, handleViewModeChange } =
     useViewMode(editor)
 
-  useEffect(() => {
-    setPredictiveTextContext({
-      generateCompletion: webLLM.generateCompletion,
-      isReady: webLLM.isReady,
-    })
-  }, [webLLM.generateCompletion, webLLM.isReady])
-
   const handleAskAIClose = useCallback(() => {
     setShowAskAI(false)
     editor?.commands.focus()
@@ -114,6 +107,13 @@ export function Editor() {
     },
     [editor]
   )
+
+  useEffect(() => {
+    setPredictiveTextContext({
+      generateCompletion: webLLM.generateCompletion,
+      isReady: webLLM.isReady,
+    })
+  }, [webLLM.generateCompletion, webLLM.isReady])
 
   return (
     <div className={styles.editorWrapper}>
@@ -156,15 +156,16 @@ export function Editor() {
             }}
           />
         )}
-      </div>
 
-      {showAskAI && (
-        <AskAI
-          onClose={handleAskAIClose}
-          onSubmit={handleAskAISubmit}
-          selectedText={editor?.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to, ' ')}
-        />
-      )}
+        {showAskAI && editor && (
+          <AskAIPopover
+            editor={editor}
+            onClose={handleAskAIClose}
+            onSubmit={handleAskAISubmit}
+            selectedText={editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to, ' ')}
+          />
+        )}
+      </div>
     </div>
   )
 }
