@@ -1,0 +1,7 @@
+@use '@carbon/styles/scss/spacing' as spacing;
+
+.askAiContent {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$spacing-05;
+}

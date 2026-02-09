@@ -6,7 +6,7 @@ import {
   InlineNotification,
 } from '@carbon/react'
 import { useWebLLM } from '@/context/WebLLMContext'
-import './styles.css'
+import styles from './styles.module.scss'
 
 interface AskAIProps {
   onClose: () => void
@@ -66,7 +66,7 @@ export function AskAI({ onClose, onSubmit, selectedText }: AskAIProps) {
       primaryButtonDisabled={!prompt.trim() || !isReady || !isSupported || isGenerating}
       size="md"
     >
-      <div className="ask-ai-content">
+      <div className={styles.askAiContent}>
         <TextArea
           id="ask-ai-prompt"
           labelText="Prompt"

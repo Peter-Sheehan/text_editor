@@ -1,6 +1,7 @@
 import { Theme, Tag } from '@carbon/react'
 import { Editor } from '@/components/Editor'
 import { WebLLMProvider, useWebLLM } from '@/context/WebLLMContext'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 function AppContent() {
   const { isReady, isSupported } = useWebLLM()
@@ -45,11 +46,13 @@ function AppContent() {
 
 function App() {
   return (
-    <Theme theme="g100">
-      <WebLLMProvider>
-        <AppContent />
-      </WebLLMProvider>
-    </Theme>
+    <ErrorBoundary>
+      <Theme theme="g100">
+        <WebLLMProvider>
+          <AppContent />
+        </WebLLMProvider>
+      </Theme>
+    </ErrorBoundary>
   )
 }
 
