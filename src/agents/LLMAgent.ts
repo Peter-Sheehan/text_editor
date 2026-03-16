@@ -55,17 +55,21 @@ export class LLMAgent implements AIAgent {
       maxTokens = 40,
       temperature = 0.6,
       contextWindow = 500,
+      documentContext,
     } = options
 
     const context = textBefore.slice(-contextWindow)
 
+    // Build a system prompt that anchors the model to the document's topic.
+    // If we have the document preamble, include it so the model never forgets
+    // what the document is about (prevents "19 year old team" for a hurling doc).
+    const systemContent = documentContext
+      ? `You are a predictive text assistant. The document being written starts with:\n"${documentContext}"\n\nComplete the text naturally, staying strictly on that topic. Output ONLY the completion — no explanations, no preamble. Max 1 sentence.`
+      : "You are a predictive text assistant. Complete the text below naturally, staying strictly on the same topic. Output ONLY the completion — no explanations, no preamble. Max 1 sentence."
+
     const response = await this.engine.chat.completions.create({
       messages: [
-        {
-          role: 'system',
-          content:
-            "You are a predictive text assistant. Complete the text below naturally, staying strictly on the same topic. Output ONLY the completion — no explanations, no preamble. Max 1 sentence.",
-        },
+        { role: 'system', content: systemContent },
         { role: 'user', content: `Continue this text:\n${context}` },
       ],
       max_tokens: maxTokens,
@@ -85,17 +89,17 @@ export class LLMAgent implements AIAgent {
   ): AsyncGenerator<string> {
     if (!this.engine) throw new Error('LLM agent not initialized')
 
-    const { maxTokens = 40, temperature = 0.6, contextWindow = 500 } = options
+    const { maxTokens = 40, temperature = 0.6, contextWindow = 500, documentContext } = options
     const context = textBefore.slice(-contextWindow)
+
+    const systemContent = documentContext
+      ? `You are a predictive text assistant. The document being written starts with:\n"${documentContext}"\n\nComplete the text naturally, staying strictly on that topic. Output ONLY the completion. Max 1 sentence.`
+      : "You are a predictive text assistant. Complete the user's writing naturally. Output ONLY the completion. Max 1–2 sentences."
 
     const stream = await this.engine.chat.completions.create({
       messages: [
-        {
-          role: 'system',
-          content:
-            "You are a predictive text assistant. Complete the user's writing naturally. Output ONLY the completion. Max 1–2 sentences.",
-        },
-        { role: 'user', content: context },
+        { role: 'system', content: systemContent },
+        { role: 'user', content: `Continue this text:\n${context}` },
       ],
       max_tokens: maxTokens,
       temperature,

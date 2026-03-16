@@ -126,7 +126,7 @@ export const PredictiveText = Extension.create({
                   const { from, empty } = state.selection
                   if (!empty) return
 
-                  // Small context window — enough for good completions, fast to process
+                  // Immediate context: last ~200 chars before the cursor
                   const textBefore = state.doc.textBetween(
                     Math.max(0, from - 200),
                     from,
@@ -135,6 +135,13 @@ export const PredictiveText = Extension.create({
 
                   if (!shouldTrigger(textBefore)) return
 
+                  // Document preamble: first ~300 chars of the document.
+                  // Gives the model a stable topic anchor even when the cursor
+                  // is far from the start (e.g. knows the doc is about hurling).
+                  const docLength = state.doc.content.size
+                  const preambleEnd = Math.min(300, docLength)
+                  const documentContext = state.doc.textBetween(0, preambleEnd, '\n').trim()
+
                   inferenceInFlight = true
                   const requestCancelledAt = cancelled
 
@@ -142,6 +149,7 @@ export const PredictiveText = Extension.create({
                     const suggestion = await agent.predictiveComplete(textBefore, {
                       maxTokens: 30,
                       contextWindow: 200,
+                      documentContext: documentContext || undefined,
                     })
 
                     // Discard if the user typed something while we were waiting

@@ -6,6 +6,13 @@ export interface PredictiveCompletionOptions {
   maxTokens?: number
   temperature?: number
   contextWindow?: number
+  /**
+   * The opening portion of the full document (first ~300 chars).
+   * Gives the model a stable "topic anchor" even when the cursor is far from
+   * the start, preventing off-topic completions like "19 year old team" when
+   * the document is clearly about hurling.
+   */
+  documentContext?: string
 }
 
 export interface GenerateTextOptions {

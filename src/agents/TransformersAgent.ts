@@ -86,12 +86,16 @@ export class TransformersAgent implements AIAgent {
 
   async predictiveComplete(textBefore: string, options: PredictiveCompletionOptions = {}): Promise<string> {
     if (!this._ready) throw new Error('TransformersAgent not initialized')
-    const { maxTokens = 30, temperature = 0.6, contextWindow = 200 } = options
+    const { maxTokens = 30, temperature = 0.6, contextWindow = 200, documentContext } = options
     const context = textBefore.slice(-contextWindow)
 
-    // Wrap in a minimal instruction so the model stays on topic
+    // Anchor the model to the document topic so it doesn't drift off-subject.
+    const systemInstruction = documentContext
+      ? `You are a predictive text assistant. The document being written starts with:\n"${documentContext}"\n\nComplete the text naturally, staying strictly on that topic. Output ONLY the completion. Max 1 sentence.`
+      : `You are a predictive text assistant. Complete the text below naturally, staying strictly on the same topic. Output ONLY the completion. Max 1 sentence.`
+
     const prompt =
-      `<|system|>You are a predictive text assistant. Complete the text below naturally, staying strictly on the same topic. Output ONLY the completion. Max 1 sentence.\n` +
+      `<|system|>${systemInstruction}\n` +
       `<|user|>Continue this text:\n${context}\n<|assistant|>`
 
     const generated = await this.callWorker(prompt, {
