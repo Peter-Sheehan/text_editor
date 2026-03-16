@@ -34,7 +34,7 @@ export const AskAIExtension = Extension.create<AskAIOptions>({
 
   addKeyboardShortcuts() {
     return {
-      'Mod-k': () => {
+      'Mod-Shift-a': () => {
         this.options.onActivate()
         return true
       },

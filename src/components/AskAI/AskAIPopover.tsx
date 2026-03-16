@@ -100,6 +100,9 @@ export function AskAIPopover({ editor, onClose, onSubmit, selectedText }: AskAIP
       } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         handleSubmit()
+      } else if (e.key === 'a' && e.shiftKey && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        onClose()
       }
     },
     [handleSubmit, onClose]
@@ -138,7 +141,7 @@ export function AskAIPopover({ editor, onClose, onSubmit, selectedText }: AskAIP
             )}
 
             <div className={styles.shortcuts}>
-              <kbd className={styles.kbd}>⌘J</kbd>
+              <kbd className={styles.kbd}>⌘⇧A</kbd>
             </div>
 
             <button className={styles.generateButton} onClick={handleSubmit} disabled={!canGenerate}>

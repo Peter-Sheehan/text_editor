@@ -121,7 +121,7 @@ export function AIPanel() {
               <div className={styles.section}>
                 <p className={styles.hint}>
                   <kbd>Tab</kbd> accept &nbsp;·&nbsp; <kbd>Esc</kbd> dismiss &nbsp;·&nbsp;{' '}
-                  <kbd>⌘J</kbd> Ask AI
+                  <kbd>⌘⇧A</kbd> Ask AI
                 </p>
               </div>
             </>
