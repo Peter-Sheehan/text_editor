@@ -161,7 +161,7 @@ export const PredictiveText = Extension.create({
                   } finally {
                     inferenceInFlight = false
                   }
-                }, 1200)
+                }, 800)
               }
             },
 

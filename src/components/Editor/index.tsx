@@ -15,6 +15,7 @@ import { ViewModeSwitcher } from './ViewModeSwitcher'
 import { useWebLLM } from '@/context/WebLLMContext'
 import { useViewMode } from '@/hooks/useViewMode'
 import { useState, useCallback, useEffect } from 'react'
+import { getEditorContext, buildAskAIContext } from '@/utils/editorContext'
 import SimpleCodeEditor from 'react-simple-code-editor'
 import hljs from 'highlight.js/lib/core'
 import 'highlight.js/styles/github-dark.css'
@@ -161,14 +162,19 @@ export function Editor() {
           />
         )}
 
-        {showAskAI && editor && (
-          <AskAIPopover
-            editor={editor}
-            onClose={handleAskAIClose}
-            onSubmit={handleAskAISubmit}
-            selectedText={editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to, ' ')}
-          />
-        )}
+        {showAskAI && editor && (() => {
+          const ctx = getEditorContext(editor.state)
+          return (
+            <AskAIPopover
+              editor={editor}
+              onClose={handleAskAIClose}
+              onSubmit={handleAskAISubmit}
+              selectedText={ctx.selectedText || undefined}
+              currentLine={ctx.currentLine || undefined}
+              context={buildAskAIContext(ctx) || undefined}
+            />
+          )
+        })()}
       </div>
     </div>
   )

@@ -8,10 +8,22 @@ interface AskAIPopoverProps {
   editor: Editor
   onClose: () => void
   onSubmit: (text: string) => void
+  /** Text the user has highlighted — highest-priority context */
   selectedText?: string
+  /** The paragraph/line the cursor is on — shown as a hint when nothing is selected */
+  currentLine?: string
+  /** Full context string passed to the LLM (may include surrounding paragraphs) */
+  context?: string
 }
 
-export function AskAIPopover({ editor, onClose, onSubmit, selectedText }: AskAIPopoverProps) {
+export function AskAIPopover({
+  editor,
+  onClose,
+  onSubmit,
+  selectedText,
+  currentLine,
+  context,
+}: AskAIPopoverProps) {
   const [prompt, setPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [streamedText, setStreamedText] = useState('')
@@ -22,7 +34,7 @@ export function AskAIPopover({ editor, onClose, onSubmit, selectedText }: AskAIP
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const accumulatedRef = useRef('')
 
-  // Calculate position based on cursor
+  // Position below (or above) the cursor
   useEffect(() => {
     const updatePosition = () => {
       const { view } = editor
@@ -61,6 +73,12 @@ export function AskAIPopover({ editor, onClose, onSubmit, selectedText }: AskAIP
     textareaRef.current?.focus()
   }, [])
 
+  // The hint snippet shown in the popover header (selected text takes priority)
+  const contextHint = selectedText || currentLine || ''
+  const truncatedHint = contextHint.length > 40
+    ? contextHint.slice(0, 40) + '…'
+    : contextHint
+
   const handleSubmit = useCallback(async () => {
     if (!prompt.trim() || !isReady || !isSupported || isGenerating) return
 
@@ -69,13 +87,17 @@ export function AskAIPopover({ editor, onClose, onSubmit, selectedText }: AskAIP
     setStreamedText('')
     accumulatedRef.current = ''
 
+    const systemPrompt = selectedText
+      ? 'You are a helpful writing assistant. The user has selected some text and wants help with it. Respond with only the replacement/continuation text — no explanations.'
+      : context
+      ? 'You are a helpful writing assistant. Use the provided context (the current line/paragraph) to inform your response. Respond with text that fits naturally into the document.'
+      : 'You are a helpful writing assistant. Respond with text that can be directly inserted into a document. Be concise and helpful.'
+
     try {
       await generateText({
         prompt: prompt.trim(),
-        context: selectedText || undefined,
-        systemPrompt: selectedText
-          ? 'You are a helpful writing assistant. The user has selected some text and wants you to help with it. Respond with only the replacement/continuation text, no explanations.'
-          : 'You are a helpful writing assistant. Respond with text that can be directly inserted into a document. Be concise and helpful.',
+        context: context || undefined,
+        systemPrompt,
         onStream: (chunk, done) => {
           if (done) return
           accumulatedRef.current += chunk
@@ -90,7 +112,7 @@ export function AskAIPopover({ editor, onClose, onSubmit, selectedText }: AskAIP
     } finally {
       setIsGenerating(false)
     }
-  }, [prompt, isReady, isSupported, isGenerating, generateText, selectedText, onSubmit])
+  }, [prompt, isReady, isSupported, isGenerating, generateText, selectedText, context, onSubmit])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -117,7 +139,6 @@ export function AskAIPopover({ editor, onClose, onSubmit, selectedText }: AskAIP
       style={{ top: `${position.top}px`, left: `${position.left}px` }}
     >
       <div className={styles.popoverInner}>
-        {/* Top row */}
         <div className={styles.topRow}>
           <div className={styles.inputWrapper}>
             <span className={styles.label}>Ask AI</span>
@@ -134,9 +155,10 @@ export function AskAIPopover({ editor, onClose, onSubmit, selectedText }: AskAIP
           </div>
 
           <div className={styles.actions}>
-            {selectedText && (
-              <span className={styles.context}>
-                &ldquo;{selectedText.slice(0, 20)}{selectedText.length > 20 ? '…' : ''}&rdquo;
+            {/* Show selected text or current line as context hint */}
+            {truncatedHint && (
+              <span className={styles.context} title={contextHint}>
+                {selectedText ? '✂ ' : '¶ '}&ldquo;{truncatedHint}&rdquo;
               </span>
             )}
 
@@ -162,7 +184,6 @@ export function AskAIPopover({ editor, onClose, onSubmit, selectedText }: AskAIP
           </div>
         )}
 
-        {/* Status */}
         {isGenerating && !streamedText && (
           <div className={styles.status}>
             <InlineLoading description="Generating…" />
