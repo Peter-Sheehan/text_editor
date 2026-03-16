@@ -19,6 +19,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
     env.allowLocalModels = false
 
     try {
+      // Larger context window helps the model stay on topic
       generator = await pipeline('text-generation', msg.modelId, {
         dtype: 'q4',
         device: 'wasm',

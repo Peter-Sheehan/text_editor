@@ -2,6 +2,7 @@ import { Extension } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import type { AIAgent } from '@/agents/types'
+import { validateCompletion } from '@/utils/completionValidator'
 
 const predictiveTextKey = new PluginKey('predictiveText')
 
@@ -146,6 +147,15 @@ export const PredictiveText = Extension.create({
                     // Discard if the user typed something while we were waiting
                     if (cancelled !== requestCancelledAt) return
                     if (!suggestion?.trim()) return
+
+                    // Run the validation pipeline — reject low-quality / off-topic completions
+                    const validation = validateCompletion(textBefore, suggestion)
+                    if (!validation.valid) {
+                      console.debug(
+                        `[PredictiveText] rejected "${suggestion}" — ${validation.stage}: ${validation.reason}`
+                      )
+                      return
+                    }
 
                     const currentPos = editor.state.selection.from
                     const { tr } = editor.view.state

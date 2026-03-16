@@ -64,9 +64,9 @@ export class LLMAgent implements AIAgent {
         {
           role: 'system',
           content:
-            "You are a predictive text assistant. Complete the user's writing naturally. Output ONLY the completion — no explanations, no preamble. Keep it to 1–2 sentences max.",
+            "You are a predictive text assistant. Complete the text below naturally, staying strictly on the same topic. Output ONLY the completion — no explanations, no preamble. Max 1 sentence.",
         },
-        { role: 'user', content: context },
+        { role: 'user', content: `Continue this text:\n${context}` },
       ],
       max_tokens: maxTokens,
       temperature,

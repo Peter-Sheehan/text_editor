@@ -89,7 +89,12 @@ export class TransformersAgent implements AIAgent {
     const { maxTokens = 30, temperature = 0.6, contextWindow = 200 } = options
     const context = textBefore.slice(-contextWindow)
 
-    const generated = await this.callWorker(context, {
+    // Wrap in a minimal instruction so the model stays on topic
+    const prompt =
+      `<|system|>You are a predictive text assistant. Complete the text below naturally, staying strictly on the same topic. Output ONLY the completion. Max 1 sentence.\n` +
+      `<|user|>Continue this text:\n${context}\n<|assistant|>`
+
+    const generated = await this.callWorker(prompt, {
       max_new_tokens: maxTokens,
       temperature,
       do_sample: temperature > 0,
