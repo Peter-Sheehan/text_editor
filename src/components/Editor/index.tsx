@@ -110,7 +110,7 @@ export function Editor() {
 
   useEffect(() => {
     setPredictiveTextContext({
-      generateCompletion: webLLM.generateCompletion,
+      predictiveComplete: webLLM.generateCompletion,
       isReady: webLLM.isReady,
     })
   }, [webLLM.generateCompletion, webLLM.isReady])

@@ -1,0 +1,41 @@
+@use '@carbon/styles/scss/theme' as theme;
+@use '@carbon/styles/scss/spacing' as spacing;
+
+.app {
+  min-height: 100vh;
+  background-color: theme.$background;
+  padding: spacing.$spacing-07 0;
+}
+
+.container {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 0 spacing.$spacing-05;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: spacing.$spacing-05;
+  margin-bottom: spacing.$spacing-06;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: theme.$text-primary;
+  margin: 0;
+  line-height: 1.2;
+  padding-top: spacing.$spacing-02;
+}
+
+.aiPanelWrapper {
+  flex-shrink: 0;
+  min-width: 200px;
+  max-width: 260px;
+}
+
+.main {
+  width: 100%;
+}
