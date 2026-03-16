@@ -1,4 +1,7 @@
 import { CreateMLCEngine, type MLCEngine } from '@mlc-ai/web-llm'
+import type { AIAgent, ProgressCallback, PredictiveCompletionOptions, GenerateTextOptions } from './types'
+
+export { type AIAgent, type ProgressCallback, type PredictiveCompletionOptions, type GenerateTextOptions }
 
 export const DEFAULT_MODEL_ID = 'Llama-3.2-1B-Instruct-q4f32_1-MLC'
 
@@ -8,23 +11,7 @@ export interface LLMAgentConfig {
   topP?: number
 }
 
-export interface PredictiveCompletionOptions {
-  maxTokens?: number
-  temperature?: number
-  contextWindow?: number
-}
-
-export interface GenerateTextOptions {
-  systemPrompt?: string
-  context?: string
-  maxTokens?: number
-  temperature?: number
-  onStream?: (chunk: string, done: boolean) => void
-}
-
-export type ProgressCallback = (progress: number, status: string) => void
-
-export class LLMAgent {
+export class LLMAgent implements AIAgent {
   private engine: MLCEngine | null = null
   private config: Required<LLMAgentConfig>
   private initialized = false

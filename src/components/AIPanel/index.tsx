@@ -3,7 +3,6 @@ import {
   Tag,
   ProgressBar,
   Tile,
-  Button,
   Toggle,
   InlineNotification,
 } from '@carbon/react'
@@ -12,32 +11,35 @@ import { useWebLLM } from '@/context/WebLLMContext'
 import styles from './styles.module.scss'
 
 /**
- * AIPanel — collapsible sidebar panel showing LLM status, download progress,
- * and configuration controls (temperature).
+ * AIPanel — collapsible sidebar panel showing LLM status, backend type,
+ * download progress, and configuration controls.
  */
 export function AIPanel() {
-  const { isLoading, loadingProgress, loadingStatus, error, isReady, isSupported, modelId } =
+  const { isLoading, loadingProgress, loadingStatus, error, isReady, modelId, backend } =
     useWebLLM()
   const [expanded, setExpanded] = useState(false)
   const [predictiveEnabled, setPredictiveEnabled] = useState(true)
 
-  const statusType = (): 'green' | 'gray' | 'blue' | 'red' => {
-    if (!isSupported || error) return 'red'
+  const statusType = (): 'green' | 'blue' | 'red' => {
+    if (error) return 'red'
     if (isReady) return 'green'
-    if (isLoading) return 'blue'
-    return 'gray'
+    return 'blue'
   }
 
   const statusLabel = () => {
-    if (!isSupported) return 'Unavailable'
     if (error) return 'Error'
     if (isReady) return 'Ready'
     if (isLoading) return 'Loading'
-    return 'Idle'
+    return 'Starting'
   }
 
-  // Short model display name
-  const shortModel = modelId.replace('-q4f32_1-MLC', '').replace('-Instruct', '')
+  // Short model display name — strip ONNX/quantisation suffixes
+  const shortModel = modelId
+    .replace('-q4f32_1-MLC', '')
+    .replace('-Instruct', '')
+    .split('/').pop() ?? modelId
+
+  const backendLabel = backend === 'webgpu' ? 'GPU' : backend === 'cpu' ? 'CPU' : null
 
   return (
     <div className={styles.panel}>
@@ -50,9 +52,8 @@ export function AIPanel() {
         <span className={styles.headerLeft}>
           <Ai size={16} />
           <span className={styles.headerTitle}>AI</span>
-          <Tag type={statusType()} size="sm">
-            {statusLabel()}
-          </Tag>
+          <Tag type={statusType()} size="sm">{statusLabel()}</Tag>
+          {backendLabel && <Tag type="outline" size="sm">{backendLabel}</Tag>}
         </span>
         {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
       </button>
@@ -63,8 +64,20 @@ export function AIPanel() {
           {/* Model info */}
           <div className={styles.section}>
             <p className={styles.sectionLabel}>Model</p>
-            <p className={styles.modelName}>{shortModel}</p>
+            <p className={styles.modelName}>{shortModel || '—'}</p>
           </div>
+
+          {/* Backend info */}
+          {backend && (
+            <div className={styles.section}>
+              <p className={styles.sectionLabel}>Backend</p>
+              <p className={styles.hint}>
+                {backend === 'webgpu'
+                  ? 'WebGPU (GPU accelerated)'
+                  : 'WebAssembly (CPU — works on all browsers)'}
+              </p>
+            </div>
+          )}
 
           {/* Loading progress */}
           {isLoading && (
@@ -74,7 +87,7 @@ export function AIPanel() {
                 value={loadingProgress}
                 max={100}
                 size="small"
-                />
+              />
             </div>
           )}
 
@@ -105,7 +118,6 @@ export function AIPanel() {
                   size="sm"
                 />
               </div>
-
               <div className={styles.section}>
                 <p className={styles.hint}>
                   <kbd>Tab</kbd> accept &nbsp;·&nbsp; <kbd>Esc</kbd> dismiss &nbsp;·&nbsp;{' '}
@@ -113,24 +125,6 @@ export function AIPanel() {
                 </p>
               </div>
             </>
-          )}
-
-          {/* Not supported */}
-          {!isSupported && (
-            <div className={styles.section}>
-              <p className={styles.hint}>
-                Requires Chrome 113+ or Edge 113+ with WebGPU enabled.
-              </p>
-              <Button
-                kind="ghost"
-                size="sm"
-                href="https://caniuse.com/webgpu"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Check browser support
-              </Button>
-            </div>
           )}
         </Tile>
       )}

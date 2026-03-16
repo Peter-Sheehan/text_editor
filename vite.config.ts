@@ -16,4 +16,9 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    // transformers.js uses dynamic imports internally and must be excluded
+    // from Vite's pre-bundling to work correctly with WASM
+    exclude: ['@huggingface/transformers'],
+  },
 })
