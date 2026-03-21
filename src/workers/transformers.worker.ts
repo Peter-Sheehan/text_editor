@@ -7,9 +7,19 @@ import { pipeline, env } from '@huggingface/transformers'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let generator: any = null
 
+type ChatMessage = { role: string; content: string }
+
 type WorkerMessage =
   | { type: 'init'; id: number; modelId: string }
-  | { type: 'generate'; id: number; text: string; options: Record<string, unknown> }
+  | {
+      type: 'generate'
+      id: number
+      /** Raw text prompt (legacy / backward-compat) */
+      text?: string
+      /** Structured chat messages — tokenizer applies the correct chat template */
+      messages?: ChatMessage[]
+      options: Record<string, unknown>
+    }
   | { type: 'destroy' }
 
 self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
@@ -40,10 +50,28 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
       return
     }
     try {
-      const output = await generator(msg.text, msg.options)
-      const generated: string = Array.isArray(output)
-        ? (output[0]?.generated_text ?? '')
-        : (output?.generated_text ?? '')
+      // Prefer structured messages (model-agnostic chat template applied by tokenizer).
+      // Fall back to raw text for backward compatibility.
+      const input = msg.messages ?? msg.text
+      const output = await generator(input, msg.options)
+
+      const raw = Array.isArray(output)
+        ? output[0]?.generated_text
+        : output?.generated_text
+
+      let generated: string
+      if (typeof raw === 'string') {
+        // Raw text input path: generated_text is the full completion string
+        generated = raw
+      } else if (Array.isArray(raw)) {
+        // Chat messages input path: generated_text is the messages array;
+        // the last entry is the assistant reply
+        generated = (raw.at(-1) as ChatMessage | undefined)?.content ?? ''
+      } else {
+        console.warn('[transformers.worker] unexpected output shape:', output)
+        generated = ''
+      }
+
       self.postMessage({ type: 'result', id: msg.id, generated })
     } catch (err) {
       self.postMessage({ type: 'result', id: msg.id, error: (err as Error).message })

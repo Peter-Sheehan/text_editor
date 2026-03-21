@@ -1,6 +1,12 @@
 import type { AIAgent, ProgressCallback, PredictiveCompletionOptions, GenerateTextOptions } from './types'
 
-export const DEFAULT_TRANSFORMERS_MODEL = 'HuggingFaceTB/SmolLM2-135M-Instruct'
+/**
+ * Default CPU model for transformers.js inference.
+ * Qwen2.5-0.5B-Instruct is trained on 18T tokens (9× more than SmolLM2-135M),
+ * giving it significantly more world knowledge for accurate predictive text.
+ * Override via VITE_TRANSFORMERS_MODEL_ID env var.
+ */
+export const DEFAULT_TRANSFORMERS_MODEL = 'onnx-community/Qwen2.5-0.5B-Instruct'
 
 /**
  * CPU-based inference agent using @huggingface/transformers (WASM/ONNX).
@@ -72,7 +78,10 @@ export class TransformersAgent implements AIAgent {
     })
   }
 
-  private callWorker(text: string, options: Record<string, unknown>): Promise<string> {
+  private callWorker(
+    input: string | Array<{ role: string; content: string }>,
+    options: Record<string, unknown>
+  ): Promise<string> {
     return new Promise((resolve, reject) => {
       if (!this.worker) return reject(new Error('Worker not running'))
       const id = this.nextId++
@@ -80,7 +89,10 @@ export class TransformersAgent implements AIAgent {
         if (error) reject(new Error(error))
         else resolve(result)
       })
-      this.worker.postMessage({ type: 'generate', id, text, options })
+      const payload = typeof input === 'string'
+        ? { type: 'generate' as const, id, text: input, options }
+        : { type: 'generate' as const, id, messages: input, options }
+      this.worker.postMessage(payload)
     })
   }
 
@@ -94,11 +106,14 @@ export class TransformersAgent implements AIAgent {
       ? `You are a predictive text assistant. The document being written starts with:\n"${documentContext}"\n\nComplete the text naturally, staying strictly on that topic. Output ONLY the completion. Max 1 sentence.`
       : `You are a predictive text assistant. Complete the text below naturally, staying strictly on the same topic. Output ONLY the completion. Max 1 sentence.`
 
-    const prompt =
-      `<|system|>${systemInstruction}\n` +
-      `<|user|>Continue this text:\n${context}\n<|assistant|>`
+    // Pass as a messages array — the tokenizer applies the correct chat template
+    // automatically, making this work for any model (Qwen2.5, SmolLM2, etc.)
+    const messages = [
+      { role: 'system', content: systemInstruction },
+      { role: 'user', content: `Continue this text:\n${context}` },
+    ]
 
-    const generated = await this.callWorker(prompt, {
+    const generated = await this.callWorker(messages, {
       max_new_tokens: maxTokens,
       temperature,
       do_sample: temperature > 0,
@@ -120,13 +135,15 @@ export class TransformersAgent implements AIAgent {
       onStream,
     } = options
 
-    const fullPrompt = [
-      `<|system|>${systemPrompt}`,
-      context ? `<|user|>Context:\n${context}\n\nRequest: ${prompt}` : `<|user|>${prompt}`,
-      '<|assistant|>',
-    ].join('\n')
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      {
+        role: 'user',
+        content: context ? `Context:\n${context}\n\nRequest: ${prompt}` : prompt,
+      },
+    ]
 
-    const result = await this.callWorker(fullPrompt, {
+    const result = await this.callWorker(messages, {
       max_new_tokens: maxTokens,
       temperature,
       do_sample: temperature > 0,
