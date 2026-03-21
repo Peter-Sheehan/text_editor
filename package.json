@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@carbon/react": "^1.100.0",
+    "@huggingface/transformers": "^3.8.1",
     "@ibm/plex": "^6.4.1",
     "@mlc-ai/web-llm": "^0.2.80",
     "@tiptap/extension-placeholder": "^3.19.0",
@@ -43,9 +44,10 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
-    "typescript": "~5.9.3",
     "sass": "^1.97.3",
+    "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "vitest": "^4.1.0"
   }
 }

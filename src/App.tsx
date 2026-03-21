@@ -1,44 +1,26 @@
-import { Theme, Tag } from '@carbon/react'
+import { Theme } from '@carbon/react'
 import { Editor } from '@/components/Editor'
-import { WebLLMProvider, useWebLLM } from '@/context/WebLLMContext'
+import { WebLLMProvider } from '@/context/WebLLMContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { AIPanel } from '@/components/AIPanel'
+import styles from './app.module.scss'
 
 function AppContent() {
-  const { isReady, isSupported } = useWebLLM()
-
-  const getTagType = (): 'green' | 'gray' | 'blue' => {
-    if (!isSupported) return 'gray'
-    if (isReady) return 'green'
-    return 'blue'
-  }
-
-  const getStatusText = () => {
-    if (!isSupported) return 'AI Unavailable'
-    if (isReady) return 'AI Ready'
-    return 'AI Loading...'
-  }
-
   return (
-    <div className="app">
-      <div className="app-container">
-        <div className="app-header">
-          <h1 className="app-title">Text Editor</h1>
-          <Tag type={getTagType()} size="sm">
-            {getStatusText()}
-          </Tag>
-        </div>
-        <p className="app-instructions">
-          Type <kbd>/</kbd> for commands
-          {isSupported && (
-            <>
-              {' | '}
-              <kbd>Cmd+J</kbd> to ask AI
-              {' | '}
-              <kbd>Tab</kbd> to accept suggestions
-            </>
-          )}
-        </p>
-        <Editor />
+    <div className={styles.app}>
+      <div className={styles.container}>
+        {/* Header */}
+        <header className={styles.header}>
+          <h1 className={styles.title}>Text Editor</h1>
+          <div className={styles.aiPanelWrapper}>
+            <AIPanel />
+          </div>
+        </header>
+
+        {/* Editor */}
+        <main className={styles.main}>
+          <Editor />
+        </main>
       </div>
     </div>
   )
